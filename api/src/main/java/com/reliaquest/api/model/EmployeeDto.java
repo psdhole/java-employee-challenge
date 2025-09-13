@@ -3,7 +3,7 @@ package com.reliaquest.api.model;
 import lombok.Data;
 
 @Data
-public class DeleteEmployeeRequest {
+public class EmployeeDto {
     private String id;
     private String name;
     private Integer salary;

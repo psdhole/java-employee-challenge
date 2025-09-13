@@ -2,12 +2,10 @@ package com.reliaquest.api.service;
 
 import static com.reliaquest.api.util.CommonUtil.toJson;
 
-import com.reliaquest.api.exceptions.ExternalServiceException;
 import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.model.ApiResponse;
-import com.reliaquest.api.model.CreateEmployeeRequest;
-import com.reliaquest.api.model.DeleteEmployeeRequest;
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeDto;
 import com.reliaquest.api.util.WebClientErrorHandler;
 import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Collections;
@@ -20,7 +18,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Service
 @RequiredArgsConstructor
@@ -33,19 +31,19 @@ public class EmployeeService {
     @Retry(name = "employeeApiRetry")
     public List<Employee> getAllEmployees() {
         log.debug("Fetching all employees");
-        List<Employee> employees = employeeApiClient
-                .get()
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class).flatMap(body -> {
-                            log.warn("Employee API failed with status: {}, body: {}", response.statusCode(), body);
-                            return Mono.error(errorHandler.handleResponse(response, body, "getAllEmployees"));
-                        }))
-                .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<Employee>>>() {})
-                .map(ApiResponse::getData)
-                .defaultIfEmpty(Collections.emptyList())
-                .block();
+        List<Employee> employees;
+        try {
+            employees = employeeApiClient
+                    .get()
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<List<Employee>>>() {})
+                    .map(ApiResponse::getData)
+                    .defaultIfEmpty(Collections.emptyList())
+                    .block();
+        } catch (WebClientResponseException ex) {
+            log.warn("Employee API failed with status: {}, body: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
+            throw errorHandler.handleException(ex);
+        }
         log.debug("Successfully fetched all employees: {}", toJson(employees));
         return employees;
     }
@@ -53,9 +51,6 @@ public class EmployeeService {
     @Retry(name = "employeeApiRetry")
     public List<Employee> searchEmployeesByName(String searchName) {
         log.info("Searching employees with name: {}", searchName);
-        if (searchName == null || searchName.isBlank()) {
-            throw new InvalidInputException("Search string must not be empty");
-        }
         List<Employee> matchedEmployees = getAllEmployees().stream()
                 .filter(e -> e.getName() != null && e.getName().toLowerCase().contains(searchName.toLowerCase()))
                 .collect(Collectors.toList());
@@ -67,26 +62,22 @@ public class EmployeeService {
     @Retry(name = "employeeApiRetry")
     public Employee getEmployeeById(String id) {
         log.info("Fetching employee by ID: {}", id);
-        Employee employee = employeeApiClient
-                .get()
-                .uri("/{id}", id)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class).flatMap(body -> {
-                            log.warn(
-                                    "Failed to fetch employee with ID: {}, status: {}, body: {}",
-                                    id,
-                                    response.statusCode(),
-                                    body);
-                            return Mono.error(errorHandler.handleResponse(response, body, id));
-                        }))
-                .bodyToMono(new ParameterizedTypeReference<ApiResponse<Employee>>() {})
-                .map(ApiResponse::getData)
-                .block();
-
-        if (employee == null) {
-            throw new ExternalServiceException("failed to fetch employee with ID: " + id, null);
+        Employee employee;
+        try {
+            employee = employeeApiClient
+                    .get()
+                    .uri("/{id}", id)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<Employee>>() {})
+                    .map(ApiResponse::getData)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            log.warn(
+                    "Failed to fetch employee with ID: {}, status: {}, body: {}",
+                    id,
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString());
+            throw errorHandler.handleException(ex);
         }
         log.debug("Successfully fetched employee: {}", toJson(employee));
         return employee;
@@ -116,31 +107,25 @@ public class EmployeeService {
     }
 
     @Retry(name = "employeeApiRetry")
-    public Employee createEmployee(CreateEmployeeRequest request) {
+    public Employee createEmployee(EmployeeDto request) {
         log.info("Creating new employee with name: {}", request.getName());
-
-        Employee employee = employeeApiClient
-                .post()
-                .bodyValue(request)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class).flatMap(body -> {
-                            log.warn(
-                                    "Failed to create employee '{}': status={}, body={}",
-                                    request.getName(),
-                                    response.statusCode(),
-                                    body);
-                            return Mono.error(errorHandler.handleResponse(response, body, request.getName()));
-                        }))
-                .bodyToMono(new ParameterizedTypeReference<ApiResponse<Employee>>() {})
-                .map(ApiResponse::getData)
-                .block();
-
-        if (employee == null) {
-            throw new ExternalServiceException("failed to create employee with name: " + request.getName(), null);
+        Employee employee;
+        try {
+            employee = employeeApiClient
+                    .post()
+                    .bodyValue(request)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<ApiResponse<Employee>>() {})
+                    .map(ApiResponse::getData)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            log.warn(
+                    "Failed to create employee with name: {}, status: {}, body: {}",
+                    request.getName(),
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString());
+            throw errorHandler.handleException(ex);
         }
-
         log.debug("Successfully created employee: {}", toJson(employee));
         return employee;
     }
@@ -153,27 +138,25 @@ public class EmployeeService {
         Employee emp = getEmployeeById(id); // will throw if not found
 
         // Build delete request
-        DeleteEmployeeRequest input = new DeleteEmployeeRequest();
+        EmployeeDto input = new EmployeeDto();
         input.setId(id);
         input.setName(emp.getName());
 
-        employeeApiClient
-                .method(HttpMethod.DELETE)
-                .bodyValue(input)
-                .retrieve()
-                .onStatus(
-                        status -> status.is4xxClientError() || status.is5xxServerError(),
-                        response -> response.bodyToMono(String.class).flatMap(body -> {
-                            log.warn(
-                                    "Failed to delete employee with ID {}, status: {}, body: {}",
-                                    id,
-                                    response.statusCode(),
-                                    body);
-                            return Mono.error(errorHandler.handleResponse(response, body, id));
-                        }))
-                .bodyToMono(Void.class)
-                .block();
-
+        try {
+            employeeApiClient
+                    .method(HttpMethod.DELETE)
+                    .bodyValue(input)
+                    .retrieve()
+                    .bodyToMono(Void.class)
+                    .block();
+        } catch (WebClientResponseException ex) {
+            log.warn(
+                    "Failed to delete employee with ID: {}, status: {}, body: {}",
+                    id,
+                    ex.getStatusCode(),
+                    ex.getResponseBodyAsString());
+            throw errorHandler.handleException(ex);
+        }
         log.debug("Successfully deleted employee with ID: {}", id);
         return emp.getName();
     }

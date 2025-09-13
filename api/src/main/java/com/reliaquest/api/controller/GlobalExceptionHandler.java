@@ -34,15 +34,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ExternalServiceException.class)
     public ResponseEntity<String> handleExternal(ExternalServiceException ex) {
-        log.error("Request failed with external api error: {}", ex.getMessage());
-        String message = "External employee service api is currently unavailable..please try again later.";
-        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(message);
+        log.error("Request failed with external api error", ex);
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(ex.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> handleGeneric(Exception ex) {
-        log.error("Request failed with unhandled exception: {}", ex.getMessage());
-        String message = "External employee service api is currently unavailable..please try again later.";
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(message);
+        log.error("Request failed with unhandled api error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Upstream employee service api failed: " + ex.getMessage());
     }
 }

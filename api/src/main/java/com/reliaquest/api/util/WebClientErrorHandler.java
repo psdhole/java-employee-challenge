@@ -2,23 +2,29 @@ package com.reliaquest.api.util;
 
 import com.reliaquest.api.exceptions.EmployeeNotFoundException;
 import com.reliaquest.api.exceptions.ExternalServiceException;
+import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.exceptions.TooManyRequestsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.ClientResponse;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 @Component
 @Slf4j
 public class WebClientErrorHandler {
-    public Throwable handleResponse(ClientResponse response, String body, String id) {
-        HttpStatus status = (HttpStatus) response.statusCode();
+    public RuntimeException handleException(WebClientResponseException ex) {
+        HttpStatus status = (HttpStatus) ex.getStatusCode();
+        String body = ex.getResponseBodyAsString();
         if (status == HttpStatus.NOT_FOUND) {
-            return new EmployeeNotFoundException(id);
+            return new EmployeeNotFoundException("Employee with given ID not found");
+        } else if (status == HttpStatus.BAD_REQUEST) {
+            return new InvalidInputException("Invalid input: " + body);
         } else if (status == HttpStatus.TOO_MANY_REQUESTS) {
-            return new TooManyRequestsException("Rate limit exceeded. Please try again later.");
+            return new TooManyRequestsException("Too many requests to upstream service");
+        } else if (status.is5xxServerError()) {
+            return new ExternalServiceException("Upstream employee service api unavailable", ex);
         } else {
-            return new ExternalServiceException("Service error: " + status + " - " + body, null);
+            return ex;
         }
     }
 }

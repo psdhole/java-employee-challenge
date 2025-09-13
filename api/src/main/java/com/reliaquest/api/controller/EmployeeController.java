@@ -1,7 +1,8 @@
 package com.reliaquest.api.controller;
 
-import com.reliaquest.api.model.CreateEmployeeRequest;
+import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.model.Employee;
+import com.reliaquest.api.model.EmployeeDto;
 import com.reliaquest.api.service.EmployeeService;
 import com.reliaquest.api.util.CommonUtil;
 import java.util.List;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-public class EmployeeController implements IEmployeeController<Employee, CreateEmployeeRequest> {
+public class EmployeeController implements IEmployeeController<Employee, EmployeeDto> {
 
     private final EmployeeService service;
 
@@ -29,6 +30,9 @@ public class EmployeeController implements IEmployeeController<Employee, CreateE
     @Override
     public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String searchString) {
         log.info("Request received to search employees by name: {}", searchString);
+        if (searchString == null || searchString.isBlank()) {
+            throw new InvalidInputException("Search string must not be empty");
+        }
         List<Employee> employees = service.searchEmployeesByName(searchString);
         log.info("Request processed - returning total {} employees by name: {}", employees.size(), searchString);
         return ResponseEntity.ok(employees);
@@ -60,10 +64,10 @@ public class EmployeeController implements IEmployeeController<Employee, CreateE
     }
 
     @Override
-    public ResponseEntity<Employee> createEmployee(@RequestBody CreateEmployeeRequest employeeInput) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody EmployeeDto employeeInput) {
         log.info("Request received to create a new employee: {}", employeeInput);
         Employee employee = service.createEmployee(employeeInput);
-        log.debug("Request processed - returning new employee with name: {}", employee.getName());
+        log.info("Request processed - returning new employee with name: {}", employee.getName());
         return ResponseEntity.ok(employee);
     }
 
@@ -72,7 +76,7 @@ public class EmployeeController implements IEmployeeController<Employee, CreateE
         log.info("Request received to delete employee by ID: {}", id);
         CommonUtil.validateID(id);
         String name = service.deleteEmployeeById(id);
-        log.debug("Request processed - deleted employee by ID: {}, with name {}", id, name);
+        log.info("Request processed - deleted employee by ID: {}, with name {}", id, name);
         return ResponseEntity.ok(name);
     }
 }

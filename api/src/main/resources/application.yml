@@ -20,10 +20,11 @@ resilience4j:
     instances:
       employeeApiRetry:
         max-attempts: 3
-        wait-duration: 10s
-        ignore-exceptions:
-            - com.reliaquest.api.exceptions.EmployeeNotFoundException
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
         retry-exceptions:
-            - java.io.IOException
-            - java.util.concurrent.TimeoutException
-            - org.springframework.web.reactive.function.client.WebClientResponseException
+            - com.reliaquest.api.exceptions.TooManyRequestsException
+            - com.reliaquest.api.exceptions.ExternalServiceException
+        ignore-exceptions:
+            - com.reliaquest.api.exceptions.InvalidInputException
