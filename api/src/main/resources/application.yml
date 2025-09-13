@@ -1,2 +1,29 @@
 spring.application.name: employee-api
 server.port: 8111
+
+# External server API base URL
+employee:
+  api:
+    base-url: http://localhost:8112/api/v1/employee
+
+# Logging configuration
+logging:
+  level:
+    com.reliaquest.api: INFO
+    reactor.netty.http.client: INFO
+    io.github.resilience4j.retry: INFO
+    springframework.web.reactive.function.client: INFO
+
+# Resilience4j configuration
+resilience4j:
+  retry:
+    instances:
+      employeeApiRetry:
+        max-attempts: 3
+        wait-duration: 10s
+        ignore-exceptions:
+            - com.reliaquest.api.exceptions.EmployeeNotFoundException
+        retry-exceptions:
+            - java.io.IOException
+            - java.util.concurrent.TimeoutException
+            - org.springframework.web.reactive.function.client.WebClientResponseException
