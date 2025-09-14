@@ -1,26 +1,25 @@
 package com.reliaquest.api.service;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
 import com.reliaquest.api.exceptions.ExternalServiceException;
 import com.reliaquest.api.model.ApiResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeDto;
 import com.reliaquest.api.util.WebClientErrorHandler;
+import java.util.Collections;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.core.ParameterizedTypeReference;
 import reactor.core.publisher.Mono;
-
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for EmployeeService using mocked WebClient.
@@ -45,7 +44,6 @@ class EmployeeServiceTest {
     private final WebClient.RequestHeadersSpec requestHeadersSpec = mock(WebClient.RequestHeadersSpec.class);
     private final WebClient.ResponseSpec responseSpec = mock(WebClient.ResponseSpec.class);
 
-
     @BeforeEach
     void setUp() {
         sampleEmployee = Employee.builder()
@@ -56,15 +54,13 @@ class EmployeeServiceTest {
                 .build();
     }
 
-
     // Helper to mock WebClient GET calls returning ApiResponse
     @SuppressWarnings({"rawtypes", "unchecked"})
     private <T> void mockWebClientGet(T body) {
         when(employeeApiClient.get()).thenReturn(requestHeadersUriSpec);
 
         // Add URI mock
-        when(requestHeadersUriSpec.uri(anyString(), any(Object[].class)))
-                .thenReturn(requestHeadersUriSpec);
+        when(requestHeadersUriSpec.uri(anyString(), any(Object[].class))).thenReturn(requestHeadersUriSpec);
 
         when(requestHeadersUriSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
@@ -75,8 +71,7 @@ class EmployeeServiceTest {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void mockWebClientDelete() {
         // Cast to RequestBodyUriSpec for bodyValue()
-        when(employeeApiClient.method(any(HttpMethod.class)))
-                .thenReturn(requestBodyUriSpec);
+        when(employeeApiClient.method(any(HttpMethod.class))).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
         when(responseSpec.bodyToMono(Void.class)).thenReturn(Mono.empty());
@@ -91,8 +86,6 @@ class EmployeeServiceTest {
         when(responseSpec.bodyToMono(any(ParameterizedTypeReference.class)))
                 .thenReturn(Mono.just(new ApiResponse<>(body)));
     }
-
-
 
     // Test fetching all employees
     @Test
@@ -111,14 +104,12 @@ class EmployeeServiceTest {
         assertEquals("John Doe", emp.getName());
     }
 
-
     // Test getting highest salary
     @Test
     void testGetHighestSalary() {
         mockWebClientGet(List.of(
                 sampleEmployee,
-                Employee.builder().id("2").name("Jane").salary(60000).age(28).build()
-        ));
+                Employee.builder().id("2").name("Jane").salary(60000).age(28).build()));
         Integer highest = employeeService.getHighestSalary();
         assertEquals(60000, highest);
     }
@@ -129,28 +120,24 @@ class EmployeeServiceTest {
         mockWebClientGet(List.of(
                 sampleEmployee,
                 Employee.builder().id("2").name("Jane").salary(60000).age(28).build(),
-                Employee.builder().id("3").name("Bob").salary(55000).age(25).build()
-        ));
+                Employee.builder().id("3").name("Bob").salary(55000).age(25).build()));
         List<String> topEarners = employeeService.getTopTenHighestEarningEmployeeNames();
         assertEquals(List.of("Jane", "Bob", "John Doe"), topEarners);
     }
 
-
     // Test creating a new employee
     @Test
     void testCreateEmployee() {
-        mockWebClientPost(Employee.builder().id("4").name("Alice").salary(45000).age(27).build());
-        Employee emp = employeeService.createEmployee(
-                new EmployeeDto("1","Alice", 45000, 27, null, null)
-        );
+        mockWebClientPost(
+                Employee.builder().id("4").name("Alice").salary(45000).age(27).build());
+        Employee emp = employeeService.createEmployee(new EmployeeDto("1", "Alice", 45000, 27, null, null));
         assertEquals("Alice", emp.getName());
     }
-
 
     // Test creating employee failure handling
     @Test
     void testCreateEmployee_Failure() {
-        //simulate WebClient POST failure
+        // simulate WebClient POST failure
         when(employeeApiClient.post()).thenReturn(requestBodyUriSpec);
         when(requestBodyUriSpec.bodyValue(any())).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
@@ -161,13 +148,11 @@ class EmployeeServiceTest {
 
         // Error handler maps it to ExternalServiceException
         when(errorHandler.handleException(any(WebClientResponseException.class)))
-                .thenThrow(new ExternalServiceException("Create failed",null));
-
+                .thenThrow(new ExternalServiceException("Create failed", null));
 
         ExternalServiceException ex = assertThrows(
                 ExternalServiceException.class,
-                () -> employeeService.createEmployee(new EmployeeDto("1", "Alice", 45000, 27, null, null))
-        );
+                () -> employeeService.createEmployee(new EmployeeDto("1", "Alice", 45000, 27, null, null)));
 
         assertEquals("Create failed", ex.getMessage());
 
@@ -184,7 +169,6 @@ class EmployeeServiceTest {
         assertEquals("John Doe", name);
     }
 
-
     // Test deleting an employee by ID failure
     @Test
     void testDeleteEmployeeById_Failure() {
@@ -199,19 +183,16 @@ class EmployeeServiceTest {
                 .thenThrow(new WebClientResponseException(500, "Delete failed", null, null, null));
 
         when(errorHandler.handleException(any(WebClientResponseException.class)))
-                .thenThrow(new ExternalServiceException("Delete failed",null));
+                .thenThrow(new ExternalServiceException("Delete failed", null));
 
-        ExternalServiceException ex = assertThrows(
-                ExternalServiceException.class,
-                () -> employeeService.deleteEmployeeById("1")
-        );
+        ExternalServiceException ex =
+                assertThrows(ExternalServiceException.class, () -> employeeService.deleteEmployeeById("1"));
 
         assertEquals("Delete failed", ex.getMessage());
 
         //  verify error handler was called
         verify(errorHandler, atLeastOnce()).handleException(any(WebClientResponseException.class));
     }
-
 
     // Test retry logic on getAllEmployees
     @Test
@@ -226,10 +207,9 @@ class EmployeeServiceTest {
                 .thenThrow(new WebClientResponseException(500, "Internal Error", null, null, null))
                 .thenReturn(Mono.just(response));
 
-        when(errorHandler.handleException(any()))
-                .thenAnswer(invocation -> {
-                    throw (Throwable) invocation.getArgument(0);
-                });
+        when(errorHandler.handleException(any())).thenAnswer(invocation -> {
+            throw (Throwable) invocation.getArgument(0);
+        });
 
         List<Employee> employees = employeeService.getAllEmployees();
         assertEquals(1, employees.size());

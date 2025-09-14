@@ -1,7 +1,6 @@
 package com.reliaquest.api.model;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,5 +30,4 @@ public class Employee {
 
     @JsonAlias("employee_email")
     private String email;
-
 }

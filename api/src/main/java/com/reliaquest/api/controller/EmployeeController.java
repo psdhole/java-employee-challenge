@@ -1,27 +1,24 @@
 package com.reliaquest.api.controller;
 
 import com.reliaquest.api.exceptions.InvalidInputException;
-import com.reliaquest.api.model.ApiResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeDto;
 import com.reliaquest.api.service.EmployeeService;
-import com.reliaquest.api.util.CommonUtil;
 import java.util.List;
-
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import static com.reliaquest.api.util.CommonUtil.toJson;
 /**
  *  REST controller for managing Employee-related endpoints.
  */
 @Slf4j
 @RestController
+@Validated
 @RequiredArgsConstructor
 public class EmployeeController implements IEmployeeController<Employee, EmployeeDto> {
 
@@ -50,9 +47,6 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     @Override
     public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String searchString) {
         log.info("Request received to search employees by name: {}", searchString);
-        if (searchString == null || searchString.isBlank()) {
-            throw new InvalidInputException("Search string must not be empty");
-        }
         List<Employee> employees = service.searchEmployeesByName(searchString);
         log.info("Request processed - returning total {} employees by name: {}", employees.size(), searchString);
         return ResponseEntity.ok(employees);
@@ -66,9 +60,8 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
      * @throws InvalidInputException if the ID is null or empty
      */
     @Override
-    public ResponseEntity<Employee> getEmployeeById(String id) {
+    public ResponseEntity<Employee> getEmployeeById(@PathVariable("id") String id) {
         log.info("Request received to get employee by ID: {}", id);
-        CommonUtil.validateID(id);
         Employee employee = service.getEmployeeById(id);
         log.info("Request processed - returning employee by ID: {}", id);
         return ResponseEntity.ok(employee);
@@ -108,7 +101,7 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
      * @throws InvalidInputException if the input data is invalid
      */
     @Override
-    public ResponseEntity<Employee> createEmployee(@Valid @RequestBody EmployeeDto employeeInput) {
+    public ResponseEntity<Employee> createEmployee(@RequestBody EmployeeDto employeeInput) {
         log.info("Request received to create a new employee: {}", employeeInput);
         Employee employee = service.createEmployee(employeeInput);
         log.info("Request processed - returning new employee with name: {}", employee.getName());
@@ -123,9 +116,8 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
      * @throws InvalidInputException if the ID is null or empty
      */
     @Override
-    public ResponseEntity<String> deleteEmployeeById(String id) {
+    public ResponseEntity<String> deleteEmployeeById(@PathVariable("id") String id) {
         log.info("Request received to delete employee by ID: {}", id);
-        CommonUtil.validateID(id);
         String name = service.deleteEmployeeById(id);
         log.info("Request processed - deleted employee by ID: {}, with name {}", id, name);
         return ResponseEntity.ok(name);

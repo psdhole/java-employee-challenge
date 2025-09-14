@@ -27,7 +27,8 @@ public class WebClientConfig {
      */
     @Bean
     public WebClient employeeApiClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder.filter((request, next) -> {
+        return webClientBuilder
+                .filter((request, next) -> {
                     log.debug("Request: {} {}", request.method(), request.url());
                     return next.exchange(request).doOnNext(response -> {
                         log.debug("Response Status: {}", response.statusCode());
