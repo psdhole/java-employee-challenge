@@ -2,7 +2,6 @@ package com.reliaquest.api.service;
 
 import static com.reliaquest.api.util.CommonUtil.toJson;
 
-import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.model.ApiResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeDto;
@@ -20,6 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+/**
+ * Service class for managing Employee operations via an external API.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,6 +30,11 @@ public class EmployeeService {
     private final WebClient employeeApiClient;
     private final WebClientErrorHandler errorHandler;
 
+    /**
+     * Fetches all employees from the external API.
+     *
+     * @return a list of all employees
+     */
     @Retry(name = "employeeApiRetry")
     public List<Employee> getAllEmployees() {
         log.debug("Fetching all employees");
@@ -41,13 +48,18 @@ public class EmployeeService {
                     .defaultIfEmpty(Collections.emptyList())
                     .block();
         } catch (WebClientResponseException ex) {
-            log.warn("Employee API failed with status: {}, body: {}", ex.getStatusCode(), ex.getResponseBodyAsString());
             throw errorHandler.handleException(ex);
         }
         log.debug("Successfully fetched all employees: {}", toJson(employees));
         return employees;
     }
 
+    /**
+     * Searches for employees whose names contain the specified search string (case-insensitive).
+     *
+     * @param searchName the name or partial name to search for
+     * @return a list of employees matching the search criteria
+     */
     @Retry(name = "employeeApiRetry")
     public List<Employee> searchEmployeesByName(String searchName) {
         log.info("Searching employees with name: {}", searchName);
@@ -59,6 +71,12 @@ public class EmployeeService {
         return matchedEmployees;
     }
 
+    /**
+     * Fetches an employee by their unique ID from the external API.
+     *
+     * @param id the unique ID of the employee
+     * @return the employee with the specified ID
+     */
     @Retry(name = "employeeApiRetry")
     public Employee getEmployeeById(String id) {
         log.info("Fetching employee by ID: {}", id);
@@ -72,17 +90,17 @@ public class EmployeeService {
                     .map(ApiResponse::getData)
                     .block();
         } catch (WebClientResponseException ex) {
-            log.warn(
-                    "Failed to fetch employee with ID: {}, status: {}, body: {}",
-                    id,
-                    ex.getStatusCode(),
-                    ex.getResponseBodyAsString());
             throw errorHandler.handleException(ex);
         }
         log.debug("Successfully fetched employee: {}", toJson(employee));
         return employee;
     }
 
+    /**
+     * Calculates the highest salary among all employees.
+     *
+     * @return the highest salary, or 0 if no employees exist
+     */
     @Retry(name = "employeeApiRetry")
     public Integer getHighestSalary() {
         log.info("Calculating highest employee salary");
@@ -94,6 +112,11 @@ public class EmployeeService {
         return highestSalary;
     }
 
+    /**
+     * Retrieves the names of the top 10 highest earning employees.
+     *
+     * @return a list of names of the top 10 highest earning employees
+     */
     @Retry(name = "employeeApiRetry")
     public List<String> getTopTenHighestEarningEmployeeNames() {
         log.info("Fetching top 10 highest earning employee names");
@@ -106,6 +129,12 @@ public class EmployeeService {
         return topEarners;
     }
 
+    /**
+     * Creates a new employee via the external API.
+     *
+     * @param request the employee data to create
+     * @return the created employee
+     */
     @Retry(name = "employeeApiRetry")
     public Employee createEmployee(EmployeeDto request) {
         log.info("Creating new employee with name: {}", request.getName());
@@ -119,17 +148,18 @@ public class EmployeeService {
                     .map(ApiResponse::getData)
                     .block();
         } catch (WebClientResponseException ex) {
-            log.warn(
-                    "Failed to create employee with name: {}, status: {}, body: {}",
-                    request.getName(),
-                    ex.getStatusCode(),
-                    ex.getResponseBodyAsString());
             throw errorHandler.handleException(ex);
         }
         log.debug("Successfully created employee: {}", toJson(employee));
         return employee;
     }
 
+    /**
+     * Deletes an employee by their unique ID via the external API.
+     *
+     * @param id the unique ID of the employee to delete
+     * @return the name of the deleted employee
+     */
     @Retry(name = "employeeApiRetry")
     public String deleteEmployeeById(String id) {
         log.info("Deleting employee with ID: {}", id);
@@ -150,11 +180,6 @@ public class EmployeeService {
                     .bodyToMono(Void.class)
                     .block();
         } catch (WebClientResponseException ex) {
-            log.warn(
-                    "Failed to delete employee with ID: {}, status: {}, body: {}",
-                    id,
-                    ex.getStatusCode(),
-                    ex.getResponseBodyAsString());
             throw errorHandler.handleException(ex);
         }
         log.debug("Successfully deleted employee with ID: {}", id);

@@ -9,9 +9,18 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+/**
+ * Utility class for handling WebClient exceptions and mapping them to custom exceptions.
+ */
 @Component
 @Slf4j
 public class WebClientErrorHandler {
+    /**
+     * Handles WebClientResponseException and maps it to custom exceptions.
+     *
+     * @param ex the WebClientResponseException to handle
+     * @return a RuntimeException representing the mapped exception
+     */
     public RuntimeException handleException(WebClientResponseException ex) {
         HttpStatus status = (HttpStatus) ex.getStatusCode();
         String body = ex.getResponseBodyAsString();

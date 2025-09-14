@@ -1,24 +1,35 @@
 package com.reliaquest.api.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * Employee model class representing an employee entity.
+ */
 @Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Employee {
     private String id;
 
-    @JsonProperty("employee_name")
+    @JsonAlias("employee_name")
     private String name;
 
-    @JsonProperty("employee_salary")
+    @JsonAlias("employee_salary")
     private Integer salary;
 
-    @JsonProperty("employee_age")
+    @JsonAlias("employee_age")
     private Integer age;
 
-    @JsonProperty("employee_title")
+    @JsonAlias("employee_title")
     private String title;
 
-    @JsonProperty("employee_email")
+    @JsonAlias("employee_email")
     private String email;
+
 }

@@ -1,0 +1,34 @@
+spring.application.name: employee-api
+server.port: 0
+
+spring:
+  main:
+    allow-bean-definition-overriding: true
+
+# External server API base URL
+employee:
+  api:
+    base-url: http://localhost:8112/api/v1/employee
+
+# Logging configuration
+logging:
+  level:
+    com.reliaquest.api: DEBUG
+    reactor.netty.http.client: DEBUG
+    io.github.resilience4j.retry: DEBUG
+    springframework.web.reactive.function.client: DEBUG
+
+# Resilience4j configuration
+resilience4j:
+  retry:
+    instances:
+      employeeApiRetry:
+        max-attempts: 3
+        wait-duration: 2s
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+            - com.reliaquest.api.exceptions.TooManyRequestsException
+            - com.reliaquest.api.exceptions.ExternalServiceException
+        ignore-exceptions:
+            - com.reliaquest.api.exceptions.InvalidInputException

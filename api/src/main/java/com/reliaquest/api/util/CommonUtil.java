@@ -7,13 +7,21 @@ import java.util.Optional;
 import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-
+/**
+ * Utility class for common operations.
+ */
 @Component
 @Slf4j
 public class CommonUtil {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    /**
+     * Validates that the provided ID is a non-empty valid UUID.
+     *
+     * @param id the ID to validate
+     * @throws InvalidInputException if the ID is empty or not a valid UUID
+     */
     public static void validateID(String id) {
         try {
             UUID.fromString(Optional.ofNullable(id)
@@ -23,6 +31,12 @@ public class CommonUtil {
         }
     }
 
+    /**
+     * Converts an object to its JSON string representation.
+     *
+     * @param obj the object to convert
+     * @return the JSON string representation of the object, or the object's toString() if serialization fails
+     */
     public static String toJson(Object obj) {
         try {
             return mapper.writeValueAsString(obj);
