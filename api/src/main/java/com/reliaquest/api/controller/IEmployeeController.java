@@ -1,11 +1,12 @@
 package com.reliaquest.api.controller;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 /**
  * Please <b>do not</b> modify this interface. If you believe there's a bug or the API contract does not align with our
@@ -23,18 +24,10 @@ public interface IEmployeeController<Entity, Input> {
     ResponseEntity<List<Entity>> getAllEmployees();
 
     @GetMapping("/search/{searchString}")
-    ResponseEntity<List<Entity>> getEmployeesByNameSearch(
-            @PathVariable("searchString") @NotBlank(message = "Search string must not be empty") String searchString);
+    ResponseEntity<List<Entity>> getEmployeesByNameSearch(@PathVariable String searchString);
 
     @GetMapping("/{id}")
-    ResponseEntity<Entity> getEmployeeById(
-            @PathVariable("id")
-                    @NotBlank(message = "Employee ID must not be empty")
-                    @Pattern(
-                            regexp =
-                                    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-                            message = "Employee ID must be a valid UUID")
-                    String id);
+    ResponseEntity<Entity> getEmployeeById(@PathVariable String id);
 
     @GetMapping("/highestSalary")
     ResponseEntity<Integer> getHighestSalaryOfEmployees();
@@ -43,15 +36,8 @@ public interface IEmployeeController<Entity, Input> {
     ResponseEntity<List<String>> getTopTenHighestEarningEmployeeNames();
 
     @PostMapping()
-    ResponseEntity<Entity> createEmployee(@Valid @RequestBody Input employeeInput);
+    ResponseEntity<Entity> createEmployee(@RequestBody Input employeeInput);
 
     @DeleteMapping("/{id}")
-    ResponseEntity<String> deleteEmployeeById(
-            @PathVariable("id")
-                    @NotBlank(message = "Employee ID must not be empty")
-                    @Pattern(
-                            regexp =
-                                    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$",
-                            message = "Employee ID must be a valid UUID")
-                    String id);
+    ResponseEntity<String> deleteEmployeeById(@PathVariable String id);
 }

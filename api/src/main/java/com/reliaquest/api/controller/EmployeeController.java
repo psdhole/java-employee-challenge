@@ -4,6 +4,7 @@ import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeDto;
 import com.reliaquest.api.service.EmployeeService;
+import com.reliaquest.api.util.InputValidator;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class EmployeeController implements IEmployeeController<Employee, EmployeeDto> {
 
     private final EmployeeService service;
-
+    private final InputValidator validator;
     /**
      * Retrieves all employees.
      *
@@ -45,8 +46,9 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
      * @throws InvalidInputException if the search string is null or empty
      */
     @Override
-    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(String searchString) {
+    public ResponseEntity<List<Employee>> getEmployeesByNameSearch(@PathVariable("searchString") String searchString) {
         log.info("Request received to search employees by name: {}", searchString);
+        validator.validate(searchString);
         List<Employee> employees = service.searchEmployeesByName(searchString);
         log.info("Request processed - returning total {} employees by name: {}", employees.size(), searchString);
         return ResponseEntity.ok(employees);
@@ -62,6 +64,7 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     @Override
     public ResponseEntity<Employee> getEmployeeById(@PathVariable("id") String id) {
         log.info("Request received to get employee by ID: {}", id);
+        validator.validateID(id);
         Employee employee = service.getEmployeeById(id);
         log.info("Request processed - returning employee by ID: {}", id);
         return ResponseEntity.ok(employee);
@@ -103,6 +106,7 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     @Override
     public ResponseEntity<Employee> createEmployee(@RequestBody EmployeeDto employeeInput) {
         log.info("Request received to create a new employee: {}", employeeInput);
+        validator.validate(employeeInput);
         Employee employee = service.createEmployee(employeeInput);
         log.info("Request processed - returning new employee with name: {}", employee.getName());
         return ResponseEntity.ok(employee);
@@ -118,6 +122,7 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     @Override
     public ResponseEntity<String> deleteEmployeeById(@PathVariable("id") String id) {
         log.info("Request received to delete employee by ID: {}", id);
+        validator.validateID(id);
         String name = service.deleteEmployeeById(id);
         log.info("Request processed - deleted employee by ID: {}, with name {}", id, name);
         return ResponseEntity.ok(name);

@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
@@ -24,6 +25,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
  * This class uses WebTestClient to perform integration tests on the EmployeeController endpoints.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
 class EmployeeControllerTest {
 
     @Autowired
@@ -118,6 +120,27 @@ class EmployeeControllerTest {
                 .isEqualTo(sampleEmployee.getAge());
     }
 
+    // Test for searching employees by name with validation error
+    @Test
+    void testGetEmployeesByNameSearch_Validation() throws Exception {
+        String search = " ";
+        when(employeeService.searchEmployeesByName(search)).thenReturn(Collections.singletonList(sampleEmployee));
+        webTestClient
+                .get()
+                .uri("/search/{searchString}", search)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.status")
+                .isEqualTo("FAILURE")
+                .jsonPath("$.error")
+                .isNotEmpty()
+                .jsonPath("$.error")
+                .toString()
+                .contains("Search string must not be empty");
+    }
+
     // Test for searching employee by ID
     @Test
     void testGetEmployeeById_Success() {
@@ -142,6 +165,26 @@ class EmployeeControllerTest {
                 .isEqualTo(sampleEmployee.getSalary())
                 .jsonPath("$.data.age")
                 .isEqualTo(sampleEmployee.getAge());
+    }
+
+    // Test for searching employee by ID with validation error
+    @Test
+    void testGetEmployeeById_Validations() throws Exception {
+        String id = "XX";
+        webTestClient
+                .get()
+                .uri("/{id}", id)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.status")
+                .isEqualTo("FAILURE")
+                .jsonPath("$.error")
+                .isNotEmpty()
+                .jsonPath("$.error")
+                .toString()
+                .contains("Employee ID must be a valid UUID");
     }
 
     // Test for getting the highest salary among employees
@@ -225,6 +268,28 @@ class EmployeeControllerTest {
                 .isEqualTo(created.getSalary())
                 .jsonPath("$.data.age")
                 .isEqualTo(created.getAge());
+    }
+
+    @Test
+    void testCreateEmployee_Validation() throws Exception {
+        EmployeeDto input =
+                EmployeeDto.builder().age(28).salary(40000).title("Developer").build();
+        webTestClient
+                .post()
+                .uri("/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(input)
+                .exchange()
+                .expectStatus()
+                .isBadRequest()
+                .expectBody()
+                .jsonPath("$.status")
+                .isEqualTo("FAILURE")
+                .jsonPath("$.error")
+                .isNotEmpty()
+                .jsonPath("$.error")
+                .toString()
+                .contains("Invalid input");
     }
 
     // Test for deleting an employee by ID

@@ -17,14 +17,16 @@ logging:
     reactor.netty.http.client: DEBUG
     io.github.resilience4j.retry: DEBUG
     springframework.web.reactive.function.client: DEBUG
+    org.springframework.web.reactive.function.client.ExchangeFunctions: TRACE
+    reactor.netty.http.client.HttpClient: DEBUG
 
 # Resilience4j configuration
 resilience4j:
   retry:
     instances:
       employeeApiRetry:
-        max-attempts: 3
-        wait-duration: 2s
+        max-attempts: 2
+        wait-duration: 1s
         enable-exponential-backoff: true
         exponential-backoff-multiplier: 2
         retry-exceptions:

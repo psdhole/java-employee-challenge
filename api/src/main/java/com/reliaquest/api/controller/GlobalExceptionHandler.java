@@ -5,13 +5,9 @@ import com.reliaquest.api.exceptions.ExternalServiceException;
 import com.reliaquest.api.exceptions.InvalidInputException;
 import com.reliaquest.api.exceptions.TooManyRequestsException;
 import com.reliaquest.api.model.ApiResponse;
-import jakarta.validation.ConstraintViolationException;
-import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -74,27 +70,8 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleGeneric(Exception ex) {
-        log.error("Request failed with unhandled api error: {}", ex.getMessage());
+        log.error("Request failed with unhandled error: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiResponse<>("Employee service api failed: " + ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        String errors = ex.getBindingResult().getAllErrors().stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.joining(", ")); // join all errors
-        log.error("Request body validation failed: {}", errors);
-        return ResponseEntity.badRequest().body(new ApiResponse<>(null, "FAILURE", errors));
-    }
-
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<?>> handleConstraint(ConstraintViolationException ex) {
-        String errors = ex.getConstraintViolations().stream()
-                .map(cv -> cv.getPropertyPath() + ": " + cv.getMessage())
-                .sorted()
-                .collect(Collectors.joining("; "));
-        log.error("Request param validation failed: {}", errors);
-        return ResponseEntity.badRequest().body(new ApiResponse<>(null, "FAILURE", errors));
     }
 }
