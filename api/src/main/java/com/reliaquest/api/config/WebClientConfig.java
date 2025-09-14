@@ -28,30 +28,7 @@ public class WebClientConfig {
     @Bean
     public WebClient employeeApiClient(WebClient.Builder webClientBuilder) {
         return webClientBuilder
-                .filter((request, next) -> {
-                    log.debug("Request: {} {}", request.method(), request.url());
-                    return next.exchange(request).doOnNext(response -> {
-                        log.debug("Response Status: {}", response.statusCode());
-                    });
-                })
                 .baseUrl(employeeApiBaseUrl)
                 .build();
-    }
-
-    /**
-     * Configures a RetryRegistry with a retry instance for the employee API.
-     *
-     * @return the configured RetryRegistry
-     */
-    @Bean
-    public RetryRegistry retryRegistry() {
-        RetryRegistry registry = RetryRegistry.ofDefaults();
-        registry.retry("employeeApiRetry")
-                .getEventPublisher()
-                .onRetry(event -> log.debug(
-                        "Retrying attempt #{} due to {}",
-                        event.getNumberOfRetryAttempts(),
-                        Objects.requireNonNull(event.getLastThrowable()).getMessage()));
-        return registry;
     }
 }

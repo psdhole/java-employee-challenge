@@ -11,7 +11,7 @@ logging:
   level:
     com.reliaquest.api: INFO
     reactor.netty.http.client: INFO
-    io.github.resilience4j.retry: INFO
+    io.github.resilience4j.retry: DEBUG
     springframework.web.reactive.function.client: INFO
 
 # Resilience4j configuration
@@ -26,5 +26,9 @@ resilience4j:
         retry-exceptions:
             - com.reliaquest.api.exceptions.TooManyRequestsException
             - com.reliaquest.api.exceptions.ExternalServiceException
+            - java.io.IOException
+            - org.springframework.web.reactive.function.client.WebClientRequestException
+
         ignore-exceptions:
             - com.reliaquest.api.exceptions.InvalidInputException
+            - com.reliaquest.api.exceptions.EmployeeNotFoundException

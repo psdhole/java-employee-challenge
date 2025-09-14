@@ -1,5 +1,6 @@
 package com.reliaquest.api.controller;
 
+import io.github.resilience4j.retry.RetryRegistry;
 import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -269,17 +270,9 @@ class EmployeeControllerIT {
                 .isEqualTo("John");
     }
 
-    // Simulate 404 Not Found responses and verify retry logic
+    // Simulate 404 Not Found responses and verify retry ignore logic
     @Test
-    void testGetEmployeeByID_NotFound_WithRetry() {
-        baseServiceMock.enqueue(new MockResponse()
-                .setBody("{\"status\":\"FAILURE\",\"error\":\"Employee with given ID not found\"}")
-                .setResponseCode(404)
-                .addHeader("Content-Type", "application/json"));
-        baseServiceMock.enqueue(new MockResponse()
-                .setBody("{\"status\":\"FAILURE\",\"error\":\"Employee with given ID not found\"}")
-                .setResponseCode(404)
-                .addHeader("Content-Type", "application/json"));
+    void testGetEmployeeByID_NotFound_IgnoreWithRetry() {
         baseServiceMock.enqueue(new MockResponse()
                 .setBody("{\"status\":\"FAILURE\",\"error\":\"Employee with given ID not found\"}")
                 .setResponseCode(404)
