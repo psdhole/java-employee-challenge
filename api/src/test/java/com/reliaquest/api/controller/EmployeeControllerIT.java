@@ -76,6 +76,22 @@ class EmployeeControllerIT {
                 .isEqualTo("John");
     }
 
+    // Test retrieving all employees with empty response
+    @Test
+    void testGetAllEmployees_EmptyResponse() throws Exception {
+        String responseBody = "{}";
+        baseServiceMock.enqueue(new MockResponse().setBody(responseBody).addHeader("Content-Type", "application/json"));
+        webTestClient
+                .get()
+                .uri("/")
+                .exchange()
+                .expectStatus()
+                .is5xxServerError()
+                .expectBody()
+                .jsonPath("$.status")
+                .isEqualTo("FAILURE");
+    }
+
     // Test retrieving an employee by ID
     @Test
     void testGetEmployeeByID() {
