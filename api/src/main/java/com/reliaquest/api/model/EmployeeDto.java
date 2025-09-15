@@ -21,8 +21,7 @@ public class EmployeeDto {
 
     @NotNull(message = "Salary is required") private Integer salary;
 
-    @NotNull(message = "Age is required")
-    @Min(value = 16, message = "Age must be at least 16")
+    @NotNull(message = "Age is required") @Min(value = 16, message = "Age must be at least 16")
     @Max(value = 75, message = "Age must be at most 75")
     private Integer age;
 

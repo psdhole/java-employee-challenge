@@ -1,8 +1,6 @@
 // WebClientConfig.java
 package com.reliaquest.api.config;
 
-import io.github.resilience4j.retry.RetryRegistry;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,8 +25,6 @@ public class WebClientConfig {
      */
     @Bean
     public WebClient employeeApiClient(WebClient.Builder webClientBuilder) {
-        return webClientBuilder
-                .baseUrl(employeeApiBaseUrl)
-                .build();
+        return webClientBuilder.baseUrl(employeeApiBaseUrl).build();
     }
 }

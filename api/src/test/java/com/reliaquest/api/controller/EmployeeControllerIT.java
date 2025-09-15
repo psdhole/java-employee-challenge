@@ -1,6 +1,5 @@
 package com.reliaquest.api.controller;
 
-import io.github.resilience4j.retry.RetryRegistry;
 import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;

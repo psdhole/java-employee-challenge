@@ -79,7 +79,7 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
     public ResponseEntity<Integer> getHighestSalaryOfEmployees() {
         log.info("Request received to get highest salary of employees");
         Integer highestSalary = service.getHighestSalary();
-        log.info("Request processed - returning highest salary of employees: {}", highestSalary);
+        log.info("Request processed - returning highest salary of employees");
         return ResponseEntity.ok(highestSalary);
     }
 
@@ -105,10 +105,10 @@ public class EmployeeController implements IEmployeeController<Employee, Employe
      */
     @Override
     public ResponseEntity<Employee> createEmployee(@RequestBody EmployeeDto employeeInput) {
-        log.info("Request received to create a new employee: {}", employeeInput);
+        log.info("Request received to create a new employee");
         validator.validate(employeeInput);
         Employee employee = service.createEmployee(employeeInput);
-        log.info("Request processed - returning new employee with name: {}", employee.getName());
+        log.info("Request processed - returning created employee with id: {}", employee.getId());
         return ResponseEntity.ok(employee);
     }
 

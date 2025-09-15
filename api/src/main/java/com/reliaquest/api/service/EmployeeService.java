@@ -1,7 +1,5 @@
 package com.reliaquest.api.service;
 
-import static com.reliaquest.api.util.CommonUtil.toJson;
-
 import com.reliaquest.api.model.ApiResponse;
 import com.reliaquest.api.model.Employee;
 import com.reliaquest.api.model.EmployeeDto;
@@ -10,6 +8,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,7 +49,7 @@ public class EmployeeService {
         } catch (WebClientResponseException ex) {
             throw errorHandler.handleException(ex);
         }
-        log.debug("Successfully fetched all employees: {}", toJson(employees));
+        log.debug("Successfully fetched total employees: {}", employees.size());
         return employees;
     }
 
@@ -66,8 +65,7 @@ public class EmployeeService {
         List<Employee> matchedEmployees = getAllEmployees().stream()
                 .filter(e -> e.getName() != null && e.getName().toLowerCase().contains(searchName.toLowerCase()))
                 .collect(Collectors.toList());
-
-        log.debug("Search successful for: '{}'. Matches found: {}", searchName, toJson(matchedEmployees));
+        log.debug("Search successful for: '{}'. total matches found: {}", searchName, matchedEmployees.size());
         return matchedEmployees;
     }
 
@@ -92,7 +90,7 @@ public class EmployeeService {
         } catch (WebClientResponseException ex) {
             throw errorHandler.handleException(ex);
         }
-        log.debug("Successfully fetched employee: {}", toJson(employee));
+        log.debug("Successfully fetched employee with id: {}", id);
         return employee;
     }
 
@@ -104,12 +102,16 @@ public class EmployeeService {
     @Retry(name = "employeeApiRetry")
     public Integer getHighestSalary() {
         log.info("Calculating highest employee salary");
-        Integer highestSalary = getAllEmployees().stream()
-                .map(Employee::getSalary)
-                .max(Comparator.naturalOrder())
-                .orElse(0);
-        log.debug("Highest salary found: {}", highestSalary);
-        return highestSalary;
+        Optional<Employee> highestSalaryEmployee =
+                getAllEmployees().stream().max(Comparator.comparing(Employee::getSalary));
+        if (highestSalaryEmployee.isPresent()) {
+            Employee emp = highestSalaryEmployee.get();
+            log.debug("Highest salary belongs to employee ID: {}", emp.getId());
+            return emp.getSalary();
+        } else {
+            log.warn("No employees found to calculate highest salary");
+            return 0;
+        }
     }
 
     /**
@@ -125,7 +127,7 @@ public class EmployeeService {
                 .limit(10)
                 .map(Employee::getName)
                 .collect(Collectors.toList());
-        log.debug("Fetched top 10 earning employee names: {}", toJson(topEarners));
+        log.debug("Fetched top 10 earning employee names: {}", topEarners.size());
         return topEarners;
     }
 
@@ -137,7 +139,7 @@ public class EmployeeService {
      */
     @Retry(name = "employeeApiRetry")
     public Employee createEmployee(EmployeeDto request) {
-        log.info("Creating new employee with name: {}", request.getName());
+        log.info("Creating new employee with name");
         Employee employee;
         try {
             employee = employeeApiClient
@@ -150,7 +152,7 @@ public class EmployeeService {
         } catch (WebClientResponseException ex) {
             throw errorHandler.handleException(ex);
         }
-        log.debug("Successfully created employee: {}", toJson(employee));
+        log.debug("Successfully created employee with id: {}", employee.getId());
         return employee;
     }
 
@@ -163,15 +165,8 @@ public class EmployeeService {
     @Retry(name = "employeeApiRetry")
     public String deleteEmployeeById(String id) {
         log.info("Deleting employee with ID: {}", id);
-
-        // Find employee name to delete
-        Employee emp = getEmployeeById(id); // will throw if not found
-
-        // Build delete request
-        EmployeeDto input = new EmployeeDto();
-        input.setId(id);
-        input.setName(emp.getName());
-
+        Employee emp = getEmployeeById(id);
+        EmployeeDto input = EmployeeDto.builder().name(emp.getName()).build();
         try {
             employeeApiClient
                     .method(HttpMethod.DELETE)
